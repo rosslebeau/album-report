@@ -1,5 +1,5 @@
 import { query } from './index.js';
-import type { PersistedAnalysisResult, AlbumRun } from '$lib/types.js';
+import type { PersistedAnalysisResult, AlbumRun, ArchetypeResult } from '$lib/types.js';
 
 interface AnalysisResultRow {
 	id: string;
@@ -11,6 +11,7 @@ interface AnalysisResultRow {
 	top_album_artist: string | null;
 	total_scrobbles: number;
 	album_runs: AlbumRun[];
+	archetype_result: ArchetypeResult | null;
 	created_at: Date;
 }
 
@@ -27,6 +28,7 @@ function rowToResult(row: AnalysisResultRow): PersistedAnalysisResult {
 				: null,
 		totalScrobbles: row.total_scrobbles,
 		albumRuns: row.album_runs,
+		archetypeResult: row.archetype_result ?? null,
 		createdAt: row.created_at.toISOString()
 	};
 }
@@ -40,12 +42,13 @@ export async function insertAnalysisResult(params: {
 	topAlbumArtist: string | null;
 	totalScrobbles: number;
 	albumRuns: readonly AlbumRun[];
+	archetypeResult: ArchetypeResult | null;
 }): Promise<PersistedAnalysisResult> {
 	const result = await query<AnalysisResultRow>(
 		`INSERT INTO analysis_results
 			(share_id, username, album_quotient, total_albums_as_unit,
-			 top_album_name, top_album_artist, total_scrobbles, album_runs)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			 top_album_name, top_album_artist, total_scrobbles, album_runs, archetype_result)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING *`,
 		[
 			params.shareId,
@@ -55,7 +58,8 @@ export async function insertAnalysisResult(params: {
 			params.topAlbumName,
 			params.topAlbumArtist,
 			params.totalScrobbles,
-			JSON.stringify(params.albumRuns)
+			JSON.stringify(params.albumRuns),
+			params.archetypeResult ? JSON.stringify(params.archetypeResult) : null
 		]
 	);
 

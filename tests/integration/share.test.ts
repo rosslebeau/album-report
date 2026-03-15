@@ -113,4 +113,99 @@ describe('insertAnalysisResult + findByShareId (DB layer)', () => {
 		expect(result.rows[0].top_album_artist).toBeNull();
 		expect(parseFloat(result.rows[0].album_quotient)).toBe(0);
 	});
+
+	it('should insert and retrieve archetype_result JSONB', async () => {
+		const shareId = 'tstshr000004';
+		const archetypeResult = {
+			archetype: 'Completionist',
+			confidence: 0.82,
+			confidenceLevel: 'high',
+			description: 'You listen to albums front-to-back.',
+			secondaryArchetype: 'Deep Diver',
+			secondaryDescription: 'You also explore artist catalogs.',
+			metrics: {
+				albumCompletionRate: 0.72,
+				artistConcentration: 0.14,
+				albumBreadth: 0.08,
+				trackPositionSkew: 0.48,
+				repeatIntensityAlbum: 0.35,
+				repeatIntensityTrack: 0.42,
+				scrobbleEntropy: 0.78,
+				popularitySkew: null,
+				genreCoherence: null,
+				uniqueAlbums: 48,
+				uniqueArtists: 22,
+				totalScrobbles: 600,
+				qualifyingAlbums: 32
+			},
+			interestingStats: [
+				{ label: 'Albums completed', value: '8 out of 14', detail: null }
+			],
+			archetypeScores: { Completionist: 0.82, 'Deep Diver': 0.74 },
+			disabledArchetypes: ['Singles Hound', 'Curator']
+		};
+
+		const insertSql = `
+			INSERT INTO analysis_results
+				(share_id, username, album_quotient, total_albums_as_unit,
+				 top_album_name, top_album_artist, total_scrobbles, album_runs, archetype_result)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			RETURNING *
+		`;
+
+		const insertResult = await pool.query(insertSql, [
+			shareId, 'test_user_4', 42.5, 7, 'OK Computer', 'Radiohead', 600,
+			JSON.stringify([]),
+			JSON.stringify(archetypeResult)
+		]);
+
+		expect(insertResult.rows[0].archetype_result).toBeTruthy();
+		expect(insertResult.rows[0].archetype_result.archetype).toBe('Completionist');
+		expect(insertResult.rows[0].archetype_result.confidence).toBe(0.82);
+		expect(insertResult.rows[0].archetype_result.metrics.albumCompletionRate).toBe(0.72);
+
+		// Retrieve
+		const selectResult = await pool.query(
+			'SELECT * FROM analysis_results WHERE share_id = $1',
+			[shareId]
+		);
+
+		expect(selectResult.rows[0].archetype_result.archetype).toBe('Completionist');
+		expect(selectResult.rows[0].archetype_result.secondaryArchetype).toBe('Deep Diver');
+	});
+
+	it('should handle null archetype_result for backward compatibility', async () => {
+		const shareId = 'tstshr000005';
+		const insertSql = `
+			INSERT INTO analysis_results
+				(share_id, username, album_quotient, total_albums_as_unit,
+				 top_album_name, top_album_artist, total_scrobbles, album_runs)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			RETURNING *
+		`;
+
+		const result = await pool.query(insertSql, [
+			shareId, 'test_user_5', 50.0, 3, null, null, 100, '[]'
+		]);
+
+		// Old row without archetype_result should have null
+		expect(result.rows[0].archetype_result).toBeNull();
+	});
+
+	it('should handle explicitly null archetype_result', async () => {
+		const shareId = 'tstshr000006';
+		const insertSql = `
+			INSERT INTO analysis_results
+				(share_id, username, album_quotient, total_albums_as_unit,
+				 top_album_name, top_album_artist, total_scrobbles, album_runs, archetype_result)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			RETURNING *
+		`;
+
+		const result = await pool.query(insertSql, [
+			shareId, 'test_user_6', 50.0, 3, null, null, 100, '[]', null
+		]);
+
+		expect(result.rows[0].archetype_result).toBeNull();
+	});
 });
