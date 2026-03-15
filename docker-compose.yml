@@ -1,0 +1,33 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-3030}:3000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-albumreport}:${POSTGRES_PASSWORD:-albumreport}@db:5432/${POSTGRES_DB:-albumreport}
+      - LASTFM_API_KEY=${LASTFM_API_KEY}
+      - ORIGIN=http://localhost:${APP_PORT:-3030}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "${DB_PORT:-3031}:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-albumreport}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-albumreport}
+      - POSTGRES_DB=${POSTGRES_DB:-albumreport}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-albumreport}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

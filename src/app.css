@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+
+@theme {
+	--color-base: #2a2a2e;
+	--color-base-light: #35353a;
+	--color-base-lighter: #404046;
+
+	--color-text-primary: #e8e8e8;
+	--color-text-secondary: #b0b0b4;
+	--color-text-muted: #808084;
+	--color-text-faint: #5a5a5e;
+
+	--color-gold: #c9a84c;
+	--color-gold-light: #d4b85e;
+	--color-gold-dim: #a08838;
+
+	--color-red: #c45c5c;
+	--color-red-light: #d47070;
+	--color-red-dim: #9e4444;
+
+	--font-family-display: 'Georgia', 'Times New Roman', serif;
+	--font-family-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@keyframes spin-slow {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes count-up {
+	from {
+		opacity: 0;
+		transform: scale(0.8);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+body {
+	font-family: var(--font-family-body);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
