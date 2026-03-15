@@ -36,6 +36,8 @@
 			type="text"
 			bind:value={username}
 			placeholder="Enter your last.fm username"
+			autocomplete="off"
+			data-1p-ignore
 			{disabled}
 			class="flex-1 px-4 py-3 min-h-[44px] rounded-lg bg-base-light text-text-primary placeholder-text-muted border border-base-lighter focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40 transition-colors"
 		/>
