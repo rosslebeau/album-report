@@ -7,12 +7,12 @@
 
 	let { result }: Props = $props();
 
-	let state: 'idle' | 'sharing' | 'shared' | 'error' = $state('idle');
+	let shareState: 'idle' | 'sharing' | 'shared' | 'error' = $state('idle');
 	let shareUrl = $state('');
 	let copied = $state(false);
 
 	async function handleShare() {
-		state = 'sharing';
+		shareState = 'sharing';
 
 		try {
 			const response = await fetch('/api/share', {
@@ -22,15 +22,15 @@
 			});
 
 			if (!response.ok) {
-				state = 'error';
+				shareState = 'error';
 				return;
 			}
 
 			const data: { shareId: string; url: string } = await response.json();
 			shareUrl = `${window.location.origin}${data.url}`;
-			state = 'shared';
+			shareState = 'shared';
 		} catch {
-			state = 'error';
+			shareState = 'error';
 		}
 	}
 
@@ -56,21 +56,21 @@
 	}
 </script>
 
-{#if state === 'idle'}
+{#if shareState === 'idle'}
 	<button
 		onclick={handleShare}
 		class="px-5 py-2.5 min-h-[44px] rounded-lg bg-base-light text-text-secondary hover:bg-base-lighter hover:text-text-primary transition-all active:scale-95 text-sm font-medium"
 	>
 		Share your results
 	</button>
-{:else if state === 'sharing'}
+{:else if shareState === 'sharing'}
 	<button
 		disabled
 		class="px-5 py-2.5 min-h-[44px] rounded-lg bg-base-light text-text-faint text-sm font-medium cursor-not-allowed"
 	>
 		Saving...
 	</button>
-{:else if state === 'shared'}
+{:else if shareState === 'shared'}
 	<div class="flex items-center gap-2 bg-base-light rounded-lg p-3 animate-[fade-in_0.3s_ease-out]">
 		<input
 			type="text"
@@ -85,7 +85,7 @@
 			{copied ? 'Copied!' : 'Copy'}
 		</button>
 	</div>
-{:else if state === 'error'}
+{:else if shareState === 'error'}
 	<div class="text-center">
 		<p class="text-red text-sm mb-2">Failed to generate share link.</p>
 		<button

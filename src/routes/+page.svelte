@@ -6,12 +6,12 @@
 
 	type PageState = 'landing' | 'loading' | 'results' | 'error';
 
-	let state: PageState = $state('landing');
+	let pageState: PageState = $state('landing');
 	let result: AnalysisResult | null = $state(null);
 	let errorMessage = $state('');
 
 	async function handleSubmit(username: string) {
-		state = 'loading';
+		pageState = 'loading';
 		errorMessage = '';
 
 		try {
@@ -24,35 +24,35 @@
 			if (!response.ok) {
 				const data: ApiError = await response.json();
 				errorMessage = data.message;
-				state = 'error';
+				pageState = 'error';
 				return;
 			}
 
 			result = await response.json();
-			state = 'results';
+			pageState = 'results';
 		} catch {
 			errorMessage = 'Something went wrong. Please check your connection and try again.';
-			state = 'error';
+			pageState = 'error';
 		}
 	}
 
 	function handleReset() {
-		state = 'landing';
+		pageState = 'landing';
 		result = null;
 		errorMessage = '';
 	}
 </script>
 
 <div class="text-center">
-	{#if state === 'landing'}
+	{#if pageState === 'landing'}
 		<LandingHero onsubmit={handleSubmit} />
 
-	{:else if state === 'loading'}
+	{:else if pageState === 'loading'}
 		<div class="animate-[fade-in_0.3s_ease-out]">
 			<LoadingState />
 		</div>
 
-	{:else if state === 'results' && result}
+	{:else if pageState === 'results' && result}
 		<div class="animate-[fade-in_0.5s_ease-out]">
 			<h2 class="text-2xl font-bold mb-6 text-text-primary">
 				Results for <span class="text-gold">{result.username}</span>
@@ -66,7 +66,7 @@
 			</button>
 		</div>
 
-	{:else if state === 'error'}
+	{:else if pageState === 'error'}
 		<div class="animate-[fade-in_0.3s_ease-out]">
 			<h2 class="text-2xl font-bold mb-4 text-text-primary">Something went wrong</h2>
 			<p class="text-red mb-6">{errorMessage}</p>
