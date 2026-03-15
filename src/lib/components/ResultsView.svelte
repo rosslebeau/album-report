@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { AnalysisResult } from '$lib/types';
 	import ShareButton from './ShareButton.svelte';
+	import ArchetypeView from './ArchetypeView.svelte';
 
 	interface Props {
 		result: AnalysisResult;
@@ -47,6 +48,11 @@
 			No album listening patterns were detected in your recent history.
 			Try listening to a few albums front-to-back!
 		</p>
+	{/if}
+
+	{#if result.archetypeResult}
+		<hr class="border-base-lighter my-8" />
+		<ArchetypeView archetypeResult={result.archetypeResult} />
 	{/if}
 
 	{#if showShare}

@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getRecentTracks, getAlbumInfo, LastfmApiError } from '$lib/server/lastfm/client';
 import { analyzeScrobbles, albumKey } from '$lib/server/algorithm/quotient';
+import { classifyArchetype } from '$lib/server/algorithm/archetype';
 import type { AlbumInfo } from '$lib/server/algorithm/types';
 import { createChildLogger, withPerformanceLog } from '$lib/server/logger';
 import type { AnalysisResult, ApiError } from '$lib/types';
@@ -39,19 +40,24 @@ export const POST: RequestHandler = async ({ request }) => {
 			return errorResponse(422, 'NO_SCROBBLES', `User '${username}' has no scrobble history.`);
 		}
 
-		const uniqueAlbums = new Map<string, { artist: string; album: string }>();
+		const albumsToFetch = new Map<string, { artist: string; album: string }>();
+		let previousKey: string | null = null;
+
 		for (const scrobble of scrobbles) {
 			if (scrobble.album) {
 				const key = albumKey(scrobble.artist, scrobble.album);
-				if (!uniqueAlbums.has(key)) {
-					uniqueAlbums.set(key, { artist: scrobble.artist, album: scrobble.album });
+				if (previousKey === key && !albumsToFetch.has(key)) {
+					albumsToFetch.set(key, { artist: scrobble.artist, album: scrobble.album });
 				}
+				previousKey = key;
+			} else {
+				previousKey = null;
 			}
 		}
 
 		const albumInfoMap = new Map<string, AlbumInfo>();
 
-		for (const [key, { artist, album }] of uniqueAlbums) {
+		for (const [key, { artist, album }] of albumsToFetch) {
 			try {
 				const info = await getAlbumInfo(artist, album);
 				if (info && info.tracks.length > 0) {
@@ -62,10 +68,24 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		}
 
+		const totalUniqueAlbums = new Set(
+			scrobbles.filter(s => s.album).map(s => albumKey(s.artist, s.album))
+		).size;
+		log.info(
+			{ username, uniqueAlbums: totalUniqueAlbums, fetched: albumInfoMap.size, skipped: totalUniqueAlbums - albumsToFetch.size },
+			'Album info fetch filtered by consecutive scrobbles'
+		);
+
 		const algorithmResult = withPerformanceLog(
 			log,
 			'album quotient algorithm',
 			() => analyzeScrobbles(scrobbles, albumInfoMap)
+		);
+
+		const archetypeResult = withPerformanceLog(
+			log,
+			'archetype classification',
+			() => classifyArchetype(scrobbles, albumInfoMap)
 		);
 
 		const result: AnalysisResult = {
@@ -74,11 +94,18 @@ export const POST: RequestHandler = async ({ request }) => {
 			totalAlbumsAsUnit: algorithmResult.totalAlbumsAsUnit,
 			topAlbum: algorithmResult.topAlbum,
 			totalScrobbles: algorithmResult.totalScrobbles,
-			albumRuns: algorithmResult.albumRuns
+			albumRuns: algorithmResult.albumRuns,
+			archetypeResult
 		};
 
 		log.info(
-			{ username, quotient: result.albumQuotient, albums: result.totalAlbumsAsUnit },
+			{
+				username,
+				quotient: result.albumQuotient,
+				albums: result.totalAlbumsAsUnit,
+				archetype: archetypeResult.archetype,
+				confidence: archetypeResult.confidence
+			},
 			'Analysis complete'
 		);
 

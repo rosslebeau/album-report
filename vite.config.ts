@@ -7,6 +7,14 @@ export default defineConfig({
 	test: {
 		include: ['tests/**/*.test.ts'],
 		environment: 'jsdom',
-		setupFiles: ['tests/setup.ts']
+		setupFiles: ['tests/setup.ts'],
+		server: {
+			deps: {
+				inline: ['svelte']
+			}
+		}
+	},
+	resolve: {
+		conditions: ['browser']
 	}
 });

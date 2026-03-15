@@ -19,7 +19,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return errorResponse(400, 'INVALID_RESULT', 'Request body must be valid JSON.');
 	}
 
-	const { username, albumQuotient, totalAlbumsAsUnit, topAlbum, totalScrobbles, albumRuns } = body;
+	const { username, albumQuotient, totalAlbumsAsUnit, topAlbum, totalScrobbles, albumRuns, archetypeResult } = body;
 
 	if (
 		typeof username !== 'string' ||
@@ -30,6 +30,16 @@ export const POST: RequestHandler = async ({ request }) => {
 	) {
 		return errorResponse(400, 'INVALID_RESULT', 'Missing required fields in analysis result.');
 	}
+
+	// Validate archetypeResult shape if present
+	const validatedArchetypeResult =
+		archetypeResult &&
+		typeof archetypeResult === 'object' &&
+		typeof (archetypeResult as Record<string, unknown>).archetype === 'string' &&
+		typeof (archetypeResult as Record<string, unknown>).confidence === 'number' &&
+		typeof (archetypeResult as Record<string, unknown>).metrics === 'object'
+			? (archetypeResult as Record<string, unknown>)
+			: null;
 
 	const shareId = nanoid(12);
 
@@ -48,7 +58,8 @@ export const POST: RequestHandler = async ({ request }) => {
 					topAlbumName: topAlbumObj?.name ?? null,
 					topAlbumArtist: topAlbumObj?.artist ?? null,
 					totalScrobbles,
-					albumRuns
+					albumRuns,
+					archetypeResult: validatedArchetypeResult as import('$lib/types').ArchetypeResult | null
 				})
 		);
 

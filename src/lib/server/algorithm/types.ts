@@ -36,3 +36,31 @@ export interface AlgorithmResult {
 	readonly albumRuns: readonly import('$lib/types').AlbumRun[];
 	readonly totalScrobbles: number;
 }
+
+export interface EnrichedScrobble {
+	readonly track: string;
+	readonly artist: string;
+	readonly album: string;
+	readonly timestamp: number;
+	readonly trackPosition: number | null;
+	readonly albumTotalTracks: number | null;
+	readonly isCompilation: boolean;
+	readonly albumMbid?: string;
+}
+
+export type MetricDirection = 'above' | 'below' | 'near';
+
+export interface MetricCondition {
+	readonly metric: string;
+	readonly direction: MetricDirection;
+	readonly target: number;
+	readonly rampStart: number;
+	readonly weight: number;
+}
+
+export interface ArchetypeDefinition {
+	readonly name: import('$lib/types').ArchetypeName;
+	readonly description: string;
+	readonly conditions: readonly MetricCondition[];
+	readonly requiredData: readonly ('popularity' | 'genre')[];
+}
